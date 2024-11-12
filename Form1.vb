@@ -142,24 +142,13 @@ Public Class Form1 'Ver 1.0
         rtbARK.Location = New Point(arkX_pos, arkY_pos)
     End Sub
 
-    Private Sub RtbARK_KeyDown(sender As Object, e As KeyEventArgs) Handles rtbARK.KeyDown 'Copilot: När man kopierar från en extern källa.
-        If e.Modifiers = Keys.Control AndAlso e.KeyCode = Keys.V Then
-            ' Stop the default paste action
-            e.Handled = True
+    Private Sub RtbARK_KeyDown(sender As Object, e As KeyEventArgs) Handles rtbARK.KeyDown 'När man klistrar in från klippbordet.
+        If (e.Modifiers = Keys.Control AndAlso e.KeyCode = Keys.V) And Clipboard.ContainsText(TextDataFormat.Rtf) And Not Rtf_ON Then
+            e.Handled = True 'Stoppar standardinklistringsåtgärd.
 
-            Try
-                ' Check if the clipboard contains rich text format (RTF) data
-                If Clipboard.ContainsText(TextDataFormat.Rtf) Then
-                    ' Insert RTF data into the rich text box
-                    Dim rtfText As String = Clipboard.GetText(TextDataFormat.Rtf)
-                    rtbARK.SelectedRtf = rtfText
-                Else
-                    ' Insert plain text data into the rich text box
-                    Dim plainText As String = Clipboard.GetText(TextDataFormat.Text)
-                    Dim selectionStart As Integer = rtbARK.SelectionStart
-                    rtbARK.Text = rtbARK.Text.Insert(selectionStart, plainText)
-                    rtbARK.SelectionStart = selectionStart + plainText.Length
-                End If
+            Try 'Klistrar in RTF i text och konverterar allt till text.
+                rtbARK.Text = rtbARK.Text.Insert(rtbARK.SelectionStart, Clipboard.GetText(TextDataFormat.Text))
+                rtbARK.SelectionStart = rtbARK.SelectionStart + Clipboard.GetText(TextDataFormat.Text).Length
             Catch ex As Exception
                 MessageBox.Show("Cannot insert object" & vbCrLf & ex.Message, "Object insert error", MessageBoxButtons.OK, MessageBoxIcon.Warning,
                 MessageBoxDefaultButton.Button2, MessageBoxOptions.RightAlign)
@@ -1121,9 +1110,9 @@ Public Class Form1 'Ver 1.0
         Dim arrLroman() As String = {"i", "ii", "iii", "iv", "v", "vi", "vii", "viii", "ix", "x", "xi", "xii", "xiii", "xiv", "xv", "xvi", "xvii", "xviii", "xix", "xx" _
         , "xxi", "xxii", "xxiii", "xxiv", "xxv", "xxvi", "xxvii", "xxviii", "xxix", "xxx", "xxxi", "xxxii", "xxxiii", "xxxivx", "xxxv", "xxxvi", "xxxvii", "xxxviii" _
         , "xxxix", "xxxx", "xxxxi", "xxxxii", "xxxxiii", "xxxxivx", "xxxxvx", "xxxxvi", "xxxxvii", "xxxxviii", "xxxxix", "l", "li", "lii", "liii", "liv", "lv", "lvi"} '56
-        Dim newSelectionStart As Integer = FindBulletListStart(rtbARK, rtbARK.SelectionStart) 'Om man markerar början slarvigt.
-        Dim newSelectionEnd As Integer = FindBulletListEnd(rtbARK, rtbARK.SelectionStart + rtbARK.SelectionLength) 'Om man markerar slutet slarvigt.
-        rtbARK.Select(newSelectionStart, newSelectionEnd - newSelectionStart)
+        selstart = FindBulletListStart(rtbARK, rtbARK.SelectionStart) 'Om man markerar början slarvigt.
+        sellength = FindBulletListEnd(rtbARK, rtbARK.SelectionStart + rtbARK.SelectionLength) 'Om man markerar slutet slarvigt.
+        rtbARK.Select(selstart, sellength - selstart)
         Dim seltext As String = rtbARK.SelectedRtf.ToString()
         Dim bullint As Integer = 0
         Dim cone As Byte = 1
@@ -1185,7 +1174,7 @@ Public Class Form1 'Ver 1.0
             seltext = Replace(seltext, "pnlvlblt", "pnlvlbody") 'Omkodning.
             seltext = Replace(seltext, "Symbol;", listfont.Name & ";",, 1) 'Fontbyte.
             rtbARK.SelectedRtf = seltext
-            rtbARK.Select(newSelectionStart, newSelectionEnd - newSelectionStart)
+            rtbARK.Select(selstart, sellength - selstart)
         Else
             MessageBox.Show("You must select (marking) a bullet list", "Identify bullet list", MessageBoxButtons.OK, MessageBoxIcon.Information,
             MessageBoxDefaultButton.Button2, MessageBoxOptions.RightAlign)
@@ -1223,38 +1212,6 @@ Public Class Form1 'Ver 1.0
 
         Return maxPosition
     End Function
-
-    'Private Function FindBulletListStart(rtb As RichTextBox, position As Integer) As Integer 'Copilot: Markerar början på punktlistan.
-    '    While position > 0
-    '        rtb.SelectionStart = position
-    '        rtb.SelectionLength = 1
-
-    '        If rtb.SelectionBullet = False Then 'Förutsätter att alla listpunkter har bullets.
-    '            Return position + 1
-    '        End If
-
-    '        position -= 1
-    '    End While
-
-    '    Return 0
-    'End Function
-
-    'Private Function FindBulletListEnd(rtb As RichTextBox, position As Integer) As Integer 'Copilot: Markerar slutet på punktlistan.
-    '    Dim maxPosition As Integer = rtb.TextLength
-
-    '    While position < maxPosition
-    '        rtb.SelectionStart = position
-    '        rtb.SelectionLength = 1
-
-    '        If rtb.SelectionBullet = False Then 'Förutsätter att alla listpunkter har bullets.
-    '            Return position
-    '        End If
-
-    '        position += 1
-    '    End While
-
-    '    Return maxPosition
-    'End Function
 
     Private Sub BtnLOUT_Click(sender As Object, e As EventArgs) Handles btnLOUT.Click 'Öka indrag vänster.
         rtbARK.SelectionIndent += indent_V
