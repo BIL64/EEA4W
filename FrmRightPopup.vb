@@ -33,8 +33,4 @@
         Form1.rtbARK.SelectAll()
     End Sub
 
-    Private Sub DeselectToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles DeselectToolStripMenuItem.Click
-        Form1.rtbARK.DeselectAll()
-    End Sub
-
 End Class

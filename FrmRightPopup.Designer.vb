@@ -30,57 +30,50 @@ Partial Class FrmRightPopup
         rpDelete = New ToolStripMenuItem()
         rpUndo = New ToolStripMenuItem()
         SelectAllToolStripMenuItem = New ToolStripMenuItem()
-        DeselectToolStripMenuItem = New ToolStripMenuItem()
         cmsRightPopup.SuspendLayout()
         SuspendLayout()
         ' 
         ' cmsRightPopup
         ' 
-        cmsRightPopup.Items.AddRange(New ToolStripItem() {rpCopy, rpCut, rpPaste, rpDelete, rpUndo, SelectAllToolStripMenuItem, DeselectToolStripMenuItem})
+        cmsRightPopup.Items.AddRange(New ToolStripItem() {rpCopy, rpCut, rpPaste, rpDelete, rpUndo, SelectAllToolStripMenuItem})
         cmsRightPopup.Name = "ContextMenuStrip1"
-        cmsRightPopup.Size = New Size(121, 158)
+        cmsRightPopup.Size = New Size(181, 158)
         ' 
         ' rpCopy
         ' 
         rpCopy.Name = "rpCopy"
-        rpCopy.Size = New Size(120, 22)
+        rpCopy.Size = New Size(180, 22)
         rpCopy.Text = "Copy"
         ' 
         ' rpCut
         ' 
         rpCut.Name = "rpCut"
-        rpCut.Size = New Size(120, 22)
+        rpCut.Size = New Size(180, 22)
         rpCut.Text = "Cut"
         ' 
         ' rpPaste
         ' 
         rpPaste.Name = "rpPaste"
-        rpPaste.Size = New Size(120, 22)
+        rpPaste.Size = New Size(180, 22)
         rpPaste.Text = "Paste"
         ' 
         ' rpDelete
         ' 
         rpDelete.Name = "rpDelete"
-        rpDelete.Size = New Size(120, 22)
+        rpDelete.Size = New Size(180, 22)
         rpDelete.Text = "Delete"
         ' 
         ' rpUndo
         ' 
         rpUndo.Name = "rpUndo"
-        rpUndo.Size = New Size(120, 22)
+        rpUndo.Size = New Size(180, 22)
         rpUndo.Text = "Undo"
         ' 
         ' SelectAllToolStripMenuItem
         ' 
         SelectAllToolStripMenuItem.Name = "SelectAllToolStripMenuItem"
-        SelectAllToolStripMenuItem.Size = New Size(120, 22)
+        SelectAllToolStripMenuItem.Size = New Size(180, 22)
         SelectAllToolStripMenuItem.Text = "Select all"
-        ' 
-        ' DeselectToolStripMenuItem
-        ' 
-        DeselectToolStripMenuItem.Name = "DeselectToolStripMenuItem"
-        DeselectToolStripMenuItem.Size = New Size(120, 22)
-        DeselectToolStripMenuItem.Text = "Deselect"
         ' 
         ' FrmRightPopup
         ' 
@@ -102,5 +95,4 @@ Partial Class FrmRightPopup
     Friend WithEvents rpDelete As ToolStripMenuItem
     Friend WithEvents rpUndo As ToolStripMenuItem
     Friend WithEvents SelectAllToolStripMenuItem As ToolStripMenuItem
-    Friend WithEvents DeselectToolStripMenuItem As ToolStripMenuItem
 End Class

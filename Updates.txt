@@ -2,5 +2,5 @@ EEA4W Updates
 =============
 Ver 1.1 Date 202505:
 1. When rendering for different fonts in a selected text, such as size, styles (B, I, U, S) and when choosing uppercase/lowercase: Individual changes for each letter/character have been removed, because the text becomes fragmented. If the rendering fails, a warning message appears.
-2. Introduction of pop-up windows when clicking the right mouse button. For copy, cut, paste, delete, undo, select all and deselect.
+2. Introduction of pop-up windows when clicking the right mouse button. For copy, cut, paste, delete, undo and select all.
 3. When you close without saving your changes, the no option has changed to the yes option.
