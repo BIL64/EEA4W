@@ -4,7 +4,7 @@ Imports System.IO
 Imports System.Runtime.InteropServices
 Imports System.Text
 
-Public Class Form1 'Ver 1.0
+Public Class Form1 'Ver 1.1
 
     Const X_skarm As Integer = 836
     Dim Y_skarm As Integer
@@ -242,7 +242,7 @@ Public Class Form1 'Ver 1.0
     Private Sub Main_FormClosing(ByVal sender As Object, ByVal e As FormClosingEventArgs) Handles Me.FormClosing 'När man stänger med krysset.
         If IsChanged Then
             Dim resultat As DialogResult = MessageBox.Show("Cancel without saving", "Cancel", MessageBoxButtons.YesNo, MessageBoxIcon.Question,
-            MessageBoxDefaultButton.Button2, MessageBoxOptions.RightAlign)
+            MessageBoxDefaultButton.Button1, MessageBoxOptions.RightAlign)
 
             Select Case resultat
                 Case DialogResult.Yes
@@ -292,15 +292,19 @@ Public Class Form1 'Ver 1.0
         nudSL.Text = CInt(a4wFontDialog.Font.Size)
     End Sub
 
-    Private Sub RtbARK_MouseDown(sender As Object, e As MouseEventArgs) Handles rtbARK.MouseDown 'Visar textens teckensnitt och storlek där man klickar.
-        Try
-            tbSNITT.Font = New Font(rtbARK.SelectionFont.Name, 10)
-            nudSL.Font = New Font(rtbARK.SelectionFont.Name, 10)
-            tbSNITT.Text = rtbARK.SelectionFont.Name
-            nudSL.Text = CInt(rtbARK.SelectionFont.Size)
-        Catch
-            'Markerar man olika typsnitt och klickar i markeringen så kommer man hit.
-        End Try
+    Private Sub RtbARK_MouseDown(sender As Object, e As MouseEventArgs) Handles rtbARK.MouseDown 'Vid klick: Visar popupmeny (högerklick) eller textens teckensnitt och storlek.
+        If e.Button = MouseButtons.Right Then
+            FrmRightPopup.cmsRightPopup.Show(rtbARK, e.Location) 'Popupmeny.
+        Else
+            Try
+                tbSNITT.Font = New Font(rtbARK.SelectionFont.Name, 10)
+                nudSL.Font = New Font(rtbARK.SelectionFont.Name, 10)
+                tbSNITT.Text = rtbARK.SelectionFont.Name
+                nudSL.Text = CInt(rtbARK.SelectionFont.Size)
+            Catch
+                'Markerar man olika typsnitt och klickar i markeringen så kommer man hit.
+            End Try
+        End If
     End Sub
 
     Private Sub RtbARK_MouseUp(sender As Object, e As MouseEventArgs) Handles rtbARK.MouseUp 'Lämnar hämtat format till den text som markerats.
@@ -319,19 +323,12 @@ Public Class Form1 'Ver 1.0
     End Sub
 
     Private Sub NudSL_ValueChanged(sender As Object, e As EventArgs) Handles nudSL.ValueChanged 'Ökar eller minskar storleken på aktuellt teckensnitt.
-        Dim sel_s As Integer = rtbARK.SelectionStart
-        Dim sel_l As Integer = rtbARK.SelectedText.Length
-
         Try
-            For index = sel_s To sel_l + sel_s - 1
-                rtbARK.Select(index, 1)
-                rtbARK.SelectionFont = New Font(rtbARK.SelectionFont.Name, nudSL.Value, rtbARK.SelectionFont.Style)
-            Next
+            rtbARK.SelectionFont = New Font(rtbARK.SelectionFont.Name, nudSL.Value, rtbARK.SelectionFont.Style)
         Catch ex As Exception
-            MessageBox.Show("Cannot read font" & vbCrLf & ex.Message, "Font size error", MessageBoxButtons.OK, MessageBoxIcon.Warning,
+            MessageBox.Show("Unable to render multiple fonts", "Font size error", MessageBoxButtons.OK, MessageBoxIcon.Warning,
             MessageBoxDefaultButton.Button2, MessageBoxOptions.RightAlign)
         End Try
-        rtbARK.Select(sel_s, sel_l)
     End Sub
 
     Private Sub RtbARK_LinkClicked(sender As Object, e As LinkClickedEventArgs) Handles rtbARK.LinkClicked 'Om man har klickat på en hyperlänk.
@@ -776,17 +773,10 @@ Public Class Form1 'Ver 1.0
         selstart = rtbARK.SelectionStart 'Sparar markeringens startposition.
         sellength = rtbARK.SelectionLength 'Sparar markeringens längd.
         Try
-            If rtbARK.SelectionFont Is Nothing Then 'Om det finns flera olika fonter.
-                For index = 0 To sellength - 1
-                    rtbARK.Select(selstart + index, 1)
-                    SetStyle_B(rtbARK.SelectionFont)
-                Next
-            Else
-                SetStyle_B(rtbARK.SelectionFont) 'Finns bara en font så blir det enklare.
-            End If
+            SetStyle_B(rtbARK.SelectionFont) 'Fungerar endast för ett typsnitt.
             rtbARK.Select(selstart, sellength) 'Markerar det specifika textområdet igen.
         Catch ex As Exception
-            MessageBox.Show("Cannot read font" & vbCrLf & ex.Message, "Font error", MessageBoxButtons.OK, MessageBoxIcon.Warning,
+            MessageBox.Show("Unable to render multiple fonts", "Font error", MessageBoxButtons.OK, MessageBoxIcon.Warning,
             MessageBoxDefaultButton.Button2, MessageBoxOptions.RightAlign)
         End Try
     End Sub
@@ -831,17 +821,10 @@ Public Class Form1 'Ver 1.0
         selstart = rtbARK.SelectionStart 'Sparar markeringens startposition.
         sellength = rtbARK.SelectionLength 'Sparar markeringens längd.
         Try
-            If rtbARK.SelectionFont Is Nothing Then 'Om det finns flera olika fonter.
-                For index = 0 To sellength - 1
-                    rtbARK.Select(selstart + index, 1)
-                    SetStyle_I(rtbARK.SelectionFont)
-                Next
-            Else
-                SetStyle_I(rtbARK.SelectionFont) 'Finns bara en font så blir det enklare.
-            End If
+            SetStyle_I(rtbARK.SelectionFont) 'Fungerar endast för ett typsnitt.
             rtbARK.Select(selstart, sellength) 'Markerar det specifika textområdet igen.
         Catch ex As Exception
-            MessageBox.Show("Cannot read font" & vbCrLf & ex.Message, "Font error", MessageBoxButtons.OK, MessageBoxIcon.Warning,
+            MessageBox.Show("Unable to render multiple fonts", "Font error", MessageBoxButtons.OK, MessageBoxIcon.Warning,
             MessageBoxDefaultButton.Button2, MessageBoxOptions.RightAlign)
         End Try
     End Sub
@@ -886,17 +869,10 @@ Public Class Form1 'Ver 1.0
         selstart = rtbARK.SelectionStart 'Sparar markeringens startposition.
         sellength = rtbARK.SelectionLength 'Sparar markeringens längd.
         Try
-            If rtbARK.SelectionFont Is Nothing Then 'Om det finns flera olika fonter.
-                For index = 0 To sellength - 1
-                    rtbARK.Select(selstart + index, 1)
-                    SetStyle_U(rtbARK.SelectionFont)
-                Next
-            Else
-                SetStyle_U(rtbARK.SelectionFont) 'Finns bara en font så blir det enklare.
-            End If
+            SetStyle_U(rtbARK.SelectionFont) 'Fungerar endast för ett typsnitt.
             rtbARK.Select(selstart, sellength) 'Markerar det specifika textområdet igen.
         Catch ex As Exception
-            MessageBox.Show("Cannot read font" & vbCrLf & ex.Message, "Font error", MessageBoxButtons.OK, MessageBoxIcon.Warning,
+            MessageBox.Show("Unable to render multiple fonts", "Font error", MessageBoxButtons.OK, MessageBoxIcon.Warning,
             MessageBoxDefaultButton.Button2, MessageBoxOptions.RightAlign)
         End Try
     End Sub
@@ -941,17 +917,10 @@ Public Class Form1 'Ver 1.0
         selstart = rtbARK.SelectionStart 'Sparar markeringens startposition.
         sellength = rtbARK.SelectionLength 'Sparar markeringens längd.
         Try
-            If rtbARK.SelectionFont Is Nothing Then 'Om det finns flera olika fonter.
-                For index = 0 To sellength - 1
-                    rtbARK.Select(selstart + index, 1)
-                    SetStyle_S(rtbARK.SelectionFont)
-                Next
-            Else
-                SetStyle_S(rtbARK.SelectionFont) 'Finns bara en font så blir det enklare.
-            End If
+            SetStyle_S(rtbARK.SelectionFont) 'Fungerar endast för ett typsnitt.
             rtbARK.Select(selstart, sellength) 'Markerar det specifika textområdet igen.
         Catch ex As Exception
-            MessageBox.Show("Cannot read font" & vbCrLf & ex.Message, "Font error", MessageBoxButtons.OK, MessageBoxIcon.Warning,
+            MessageBox.Show("Unable to render multiple fonts", "Font error", MessageBoxButtons.OK, MessageBoxIcon.Warning,
             MessageBoxDefaultButton.Button2, MessageBoxOptions.RightAlign)
         End Try
     End Sub
@@ -1029,7 +998,7 @@ Public Class Form1 'Ver 1.0
             rtbARK.Select(selstart, sellength) 'Markerar det specifika textområdet igen.
             startsample = selstart
         Catch ex As Exception
-            MessageBox.Show("Cannot read font" & vbCrLf & ex.Message, "Font error", MessageBoxButtons.OK, MessageBoxIcon.Warning,
+            MessageBox.Show("Unable to render multiple fonts", "Font error", MessageBoxButtons.OK, MessageBoxIcon.Warning,
             MessageBoxDefaultButton.Button2, MessageBoxOptions.RightAlign)
         End Try
     End Sub
@@ -1409,7 +1378,7 @@ Public Class Form1 'Ver 1.0
         Dim lbl4 As New Label With {
             .Name = "e_lblEE4",
             .Font = sfe14,
-            .Text = "Ver 1.0",
+            .Text = "Ver 1.1",
             .ForeColor = ecolor,
             .TextAlign = 2,
             .Size = New Size(190, 28),
@@ -1756,17 +1725,10 @@ Public Class Form1 'Ver 1.0
         selstart = rtbARK.SelectionStart 'Sparar markeringens startposition.
         sellength = rtbARK.SelectionLength 'Sparar markeringens längd.
         Try
-            If rtbARK.SelectionFont Is Nothing Then 'Om det finns flera olika fonter.
-                For index = 0 To sellength - 1
-                    rtbARK.Select(selstart + index, 1)
-                    rtbARK.SelectedText = rtbARK.SelectedText.ToUpper
-                Next
-            Else
-                rtbARK.SelectedText = rtbARK.SelectedText.ToUpper 'Finns bara en font så blir det enklare.
-            End If
+            rtbARK.SelectedText = rtbARK.SelectedText.ToUpper 'Fungerar endast för ett typsnitt.
             rtbARK.Select(selstart, sellength) 'Markerar det specifika textområdet igen.
         Catch ex As Exception
-            MessageBox.Show("Cannot read font" & vbCrLf & ex.Message, "Font error", MessageBoxButtons.OK, MessageBoxIcon.Warning,
+            MessageBox.Show("Unable to render multiple fonts", "Font error", MessageBoxButtons.OK, MessageBoxIcon.Warning,
             MessageBoxDefaultButton.Button2, MessageBoxOptions.RightAlign)
         End Try
     End Sub
@@ -1775,17 +1737,10 @@ Public Class Form1 'Ver 1.0
         selstart = rtbARK.SelectionStart 'Sparar markeringens startposition.
         sellength = rtbARK.SelectionLength 'Sparar markeringens längd.
         Try
-            If rtbARK.SelectionFont Is Nothing Then 'Om det finns flera olika fonter.
-                For index = 0 To sellength - 1
-                    rtbARK.Select(selstart + index, 1)
-                    rtbARK.SelectedText = rtbARK.SelectedText.ToLower
-                Next
-            Else
-                rtbARK.SelectedText = rtbARK.SelectedText.ToLower 'Finns bara en font så blir det enklare.
-            End If
+            rtbARK.SelectedText = rtbARK.SelectedText.ToLower 'Fungerar endast för ett typsnitt.
             rtbARK.Select(selstart, sellength) 'Markerar det specifika textområdet igen.
         Catch ex As Exception
-            MessageBox.Show("Cannot read font" & vbCrLf & ex.Message, "Font error", MessageBoxButtons.OK, MessageBoxIcon.Warning,
+            MessageBox.Show("Unable to render multiple fonts", "Font error", MessageBoxButtons.OK, MessageBoxIcon.Warning,
             MessageBoxDefaultButton.Button2, MessageBoxOptions.RightAlign)
         End Try
     End Sub

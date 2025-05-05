@@ -1424,7 +1424,7 @@ Partial Class Form1
         btnDESELECTALL.Name = "btnDESELECTALL"
         btnDESELECTALL.Size = New Size(12, 12)
         btnDESELECTALL.TabIndex = 63
-        a4wToolTip.SetToolTip(btnDESELECTALL, "Deselect all")
+        a4wToolTip.SetToolTip(btnDESELECTALL, "Deselect")
         btnDESELECTALL.UseVisualStyleBackColor = False
         ' 
         ' btnINDENTBL
