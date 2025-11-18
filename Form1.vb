@@ -4,29 +4,27 @@ Imports System.IO
 Imports System.Runtime.InteropServices
 Imports System.Text
 
-Public Class Form1 'Ver 1.1
+Public Class Form1 'Ver 1.2 NET6
 
-    Const X_skarm As Integer = 836
-    Dim Y_skarm As Integer
-    Const x_panel As Integer = 750
-    Const y_panel As Integer = 1180
-    Dim arkX_A4 As Integer
-    Dim arkY_A4 As Integer
-    Dim arkY_A4S As Integer 'För att A4-arket ska få plats på skärmen.
-    Dim arkX_pos As Integer
-    Dim arkY_pos As Integer
-    Dim Y_hojden As Integer 'Pollar hela tiden av höjden av innehållet.
-    Dim total_pages, goto_page As Integer 'Sidhantering.
-    Dim selstart, sellength, startsample As Integer 'Används för att återställa textmarkeringen och för IsSuper.
-    Dim CONTROLSTR, jobs(10) As String 'Kollar om man exempelvis försöker avsluta utan att man först sparat jobbet och senaste jobbfiler.
+    Private Const X_skarm As Integer = 836
+    Private Y_skarm As Integer
+    Private Const x_panel As Integer = 750
+    Private Const y_panel As Integer = 1180
+    Private arkX_A4 As Integer
+    Private arkY_A4 As Integer
+    Private arkY_A4S As Integer 'För att A4-arket ska få plats på skärmen.
+    Private arkX_pos As Integer
+    Private arkY_pos As Integer
+    Private Y_hojden As Integer 'Pollar hela tiden av höjden av innehållet.
+    Private total_pages, goto_page As Integer 'Sidhantering.
+    Private selstart, sellength, startsample As Integer 'Används för att återställa textmarkeringen och för IsSuper.
+    Private CONTROLSTR, jobs(10) As String 'Kollar om man exempelvis försöker avsluta utan att man först sparat jobbet och senaste jobbfiler.
     Public browserfile As String 'Den fil som används för hyperlänkar i texten.
-    ReadOnly filindata As Byte() 'Filens innehåll.
-    Dim IsChanged As Boolean 'Blir sann om innehållet i rtbARK har modifieras på något vis.
-    Dim inopendialog As Boolean 'Sant om OpenFileDialog och falsk om SaveFileDialog. 
-    Dim ejoppnat As Boolean = True 'Har man tidigare öppnat en fil?
-    Dim ejsparat As Boolean = True 'Har man tidigare sparat en fil?
-    Dim ejbild As Boolean = True 'Har man tidigare öppnat en fil?
-    Dim IsEE As Boolean = True 'Växlar visning av ABOUT.
+    Private IsChanged As Boolean 'Blir sann om innehållet i rtbARK har modifieras på något vis.
+    Private notopen As Boolean = True 'Har man tidigare öppnat en fil?
+    Private notimage As Boolean = True 'Har man tidigare öppnat en bild?
+    Private PATH_FILE As String = "" 'Sökvägen till arbetsfilen.
+    Private IsEE As Boolean = True 'Växlar visning av ABOUT.
     Public Rtf_ON As Boolean = True 'Är det en RTF-fil eller en ASCII-fil?
     Public CODENAME As String = "" 'Typ av filkodning gällande textfiler.
     Public IsEncode As Boolean = False 'När användaren valt en egen kodning.
@@ -35,28 +33,30 @@ Public Class Form1 'Ver 1.1
     Public staycoded As Byte = 0 'Sparar inställning gällande vilken radioknapp som är vald.
     Public IsBackColor As Boolean 'Val av text eller textbakgrundsfärg.
     Public IsA4Color As Boolean 'Om bakgrundsfärg på arket.
-    Dim format_F As Font 'Format för vald font.
-    Dim format_C, format_BC As Color 'Format för vald text- och bakgrundsfärg.
-    Dim format_ON As Boolean = False 'Har "Format"-knappen tryckts ned?
+    Private format_F As Font 'Format för vald font.
+    Private format_C, format_BC As Color 'Format för vald text- och bakgrundsfärg.
+    Private format_ON As Boolean = False 'Har "Format"-knappen tryckts ned?
     Public indent_V, bull_LI, bull_BI, bull_RI As Integer 'Ifall man ändrar värdet för indrag och i punktlistor.
     Public IsNumber, IsCapital, IsAlpha, IsZero, IsSave As Boolean 'Är det nummer/bokstäver? Är det versaler/gemener? Är det arabiska/romerska? Är från noll? Är sparad?
     Public Psign As Char 'Tecknet efter siffran eller bokstaven.
     Public F10 As String 'Fyller med nollor för tal mindre än 10.
     Public F100 As String 'Fyller med nollor för tal mindre än 100.
     Public IsASCII As Boolean = True 'Fungerar utökning av ASCII-koder?
-    Dim LastCharPrinted As Integer 'För utskrift i RTB-formatet.
-    Dim job As Byte 'Antalet jobbfiler.
-    Dim IsSuper As Boolean 'Skiftar mellan exponent och index.
-    Dim supersize As Byte = 10 'Fontstorlek.
+    Private LastCharPrinted As Integer 'För utskrift i RTB-formatet.
+    Private job As Byte 'Antalet jobbfiler.
+    Private IsSuper As Boolean 'Skiftar mellan exponent och index.
+    Private supersize As Byte = 10 'Fontstorlek.
     Public tabint As Integer 'Sparar tabulatorinställningen.
     Private special1, special2, special3 As New PrivateFontCollection() 'Global lagring av PFC-instanserna så att inte Garbage Collectorn kan ta bort dem.
-    Dim sfe14 As Font
-    Dim sfe20B As Font
-    Dim ef22 As Font
+    Private sfe14 As Font
+    Private sfe20B As Font
+    Private ef22 As Font
     'Threading.Thread.Sleep(1000) Är användbart då man vill ha en tidsfördröjning (1 sekund).
     'Task.WaitAll() Är användbar då man vill att alla operationer först ska genomfördas, innan...
 
     Private Sub Form1_Load(sender As Object, e As EventArgs) Handles MyBase.Load 'Anropas direkt vid start.
+        Dim args As String() = Environment.GetCommandLineArgs()
+        Environment.CurrentDirectory = Application.StartupPath 'Förhindrar att programmet tappar bort sina resursreferenser/jobbfiler vid dubbelklick på fil.
         SpecialFonts()
 
         Try
@@ -120,10 +120,18 @@ Public Class Form1 'Ver 1.1
         FrmEncoding.rbECAUTO.Checked = True 'Auto är standardinställningen för kodningstypen.
         rtbARK.AcceptsTab = True
         MyBase.AutoScroll = True
+        rtbARK.AllowDrop = True 'Inställningar för dra in och släpp
+        AddHandler rtbARK.DragEnter, AddressOf RtbARK_DragEnter
+        AddHandler rtbARK.DragDrop, AddressOf RtbARK_DragDrop
+
+        If args.Length > 1 Then 'Om man dubbelkickar på en fil så startar programmet och filen laddas.
+            Dim path As String = args(1)
+            If File.Exists(path) Then OpenFileFast(path)
+        End If
     End Sub
 
     Private Declare Function ShowScrollBar Lib "user32.dll" (ByVal hWnd As IntPtr, ByVal wBar As Integer, ByVal bShow As Boolean) As Boolean
-    Protected Overrides Sub WndProc(ByRef m As Message) 'Av user2480047. Gör så att inte den vertikala scrollisten dyker upp.
+    Protected Overrides Sub WndProc(ByRef m As Message) 'Av user2480047. Gör så att inte den horisontella scrollisten dyker upp.
         Try
             ShowScrollBar(MyBase.Handle, 1, False)
         Catch
@@ -368,57 +376,95 @@ Public Class Form1 'Ver 1.1
         End If
     End Function
 
+    Public Sub OpenFileFast(filepath As String) 'Öppnar filer från utforskaren och används vid dubbelklick, ytterligare filer och dra in och släpp.
+        If File.Exists(filepath) Then
+            Try
+                If IsChanged Then 'Larmar om man försöker öppna en ny fil utan att först sparat det man håller på med.
+                    Dim resultat As DialogResult = MessageBox.Show("Continue to finish work before opening file", "Open file", MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Question, MessageBoxDefaultButton.Button1, MessageBoxOptions.RightAlign)
+                    If resultat = DialogResult.Yes Then Exit Sub
+                End If
+                a4wSaveFileDialog.FileName = Path.GetFileName(filepath)
+                PATH_FILE = filepath
+
+                Dim ext = Path.GetExtension(filepath).ToLower()
+
+                If ext = ".rtf" Then 'Kollar om filtypen är av Rich text-formatet.
+                    rtbARK.LoadFile(filepath, RichTextBoxStreamType.RichText) 'Laddar upp i Rich text-formatet.
+                    Me.Text = $"EE A4W Portrait [RTF] - {Path.GetFileName(filepath)}"
+                    Rtf_ON = True
+                Else
+                    OpenTXTFile(filepath) 'Laddar upp i textformatet.
+                    Rtf_ON = False
+                End If
+                Write_Jobs(filepath)
+                btnSAVE.Text = "Save"
+                btnSAVE.ForeColor = Color.Navy
+                notopen = False
+                SampleAndReset(True)
+            Catch ex As Exception
+                MessageBox.Show($"Cannot open file. {ex.Message}", "File error", MessageBoxButtons.OK, MessageBoxIcon.Warning,
+                MessageBoxDefaultButton.Button2, MessageBoxOptions.RightAlign)
+            End Try
+        End If
+    End Sub
+
+    Private Sub RtbARK_DragEnter(sender As Object, e As DragEventArgs) Handles rtbARK.DragEnter 'Dra in fil... (AllowDrop = True för rtbARK)
+        If e.Data.GetDataPresent(DataFormats.FileDrop) Then
+            e.Effect = DragDropEffects.Copy
+        Else
+            e.Effect = DragDropEffects.None
+        End If
+    End Sub
+
+    Private lastDropFile As String = ""
+
+    Private Async Sub RtbARK_DragDrop(sender As Object, e As DragEventArgs) Handles rtbARK.DragDrop '...och släpp.
+        Dim files() As String = CType(e.Data.GetData(DataFormats.FileDrop), String())
+        If files.Length > 0 Then 'Undviker att indragna textfiler och fördröjda okända komponenter skapar problem eller kraschar programmet.
+            Dim path = files(0)  'ScrollBars.None har orsakat krascher om det inte finns en vakt och en tidsfördröjning.
+            If path <> lastDropFile Then 'Vakt - öppna inte samma fil två gånger direkt
+                lastDropFile = path
+                Await Task.Delay(100) 'Vänta 100 ms
+                OpenFileFast(path)
+            End If
+        End If
+    End Sub
+
     Private Sub BtnOPEN_Click(sender As Object, e As EventArgs) Handles btnOPEN.Click 'Öppnar filer.
-        Dim filtyp, filnamn As String
-        Dim f_langd As Byte
-
-        If btnSAVE.Text = "Press!" Then
-            btnSAVE.Text = "Save"
-            btnSAVE.ForeColor = Color.Navy
-        End If
-
-        If ejoppnat Then 'Gör en förladdning så att dessa parametrar kan aktiveras vid det första klicket.
-            a4wOpenFileDialog.Title = "Open File"
-            a4wOpenFileDialog.FileName = ""
-            ejoppnat = False
-        End If
+        a4wOpenFileDialog.Title = "Open File"
+        a4wOpenFileDialog.FileName = ""
 
         If a4wOpenFileDialog.ShowDialog = DialogResult.OK Then
-            a4wOpenFileDialog.Title = "Open File"
-            filtyp = a4wOpenFileDialog.FileName
-            filnamn = filtyp
-            f_langd = filnamn.Length
+            Dim filepath As String = a4wOpenFileDialog.FileName
 
             If IsChanged Then 'Larmar om man försöker öppna en ny fil utan att först sparat det man håller på med.
                 Dim resultat As DialogResult = MessageBox.Show("Continue to finish work before opening file", "Open file", MessageBoxButtons.YesNo,
                 MessageBoxIcon.Question, MessageBoxDefaultButton.Button1, MessageBoxOptions.RightAlign)
                 If resultat = DialogResult.Yes Then Exit Sub
             End If
+            PATH_FILE = filepath
+            a4wSaveFileDialog.FileName = Path.GetFileName(filepath)
 
-            If f_langd > 3 Then filtyp = filtyp.Substring(f_langd - 4, 4) 'Hämtar fyra tecken av filtyp .rtf
+            Dim ext = Path.GetExtension(filepath).ToLower()
 
-            If filtyp = ".rtf" Or filtyp = ".Rtf" Or filtyp = ".rTf" Or filtyp = ".rtF" Or filtyp = ".RTf" Or
-            filtyp = ".rTF" Or filtyp = ".RtF" Or filtyp = ".RTF" Then 'Kollar om filtypen är av Rich text-formatet.
-                rtbARK.LoadFile(a4wOpenFileDialog.FileName, RichTextBoxStreamType.RichText) 'Laddar upp i Rich text-formatet.
-                Me.Text = "EE A4W Portrait [RTF] - " & a4wOpenFileDialog.SafeFileName
+            If ext = ".rtf" Then 'Kollar om filepathen är av Rich text-formatet.
+                rtbARK.LoadFile(filepath, RichTextBoxStreamType.RichText) 'Laddar upp i Rich text-formatet.
+                Me.Text = $"EE A4W Portrait [RTF] - {Path.GetFileName(filepath)}"
                 Rtf_ON = True
-                btnSAVE.Text = "Save"
-                btnSAVE.ForeColor = Color.Navy
-                SampleAndReset(True)
             Else
-                OpenTXTFile(filnamn) 'Laddar upp i textformatet.
+                OpenTXTFile(filepath) 'Laddar upp i textformatet.
                 Rtf_ON = False
-                btnSAVE.Text = "Save"
-                btnSAVE.ForeColor = Color.Navy
-                SampleAndReset(True)
             End If
-
-            Write_Jobs(a4wOpenFileDialog.FileName)
-            inopendialog = True
+            Write_Jobs(filepath)
+            btnSAVE.Text = "Save"
+            btnSAVE.ForeColor = Color.Navy
+            notopen = False
+            SampleAndReset(True)
         End If
     End Sub
 
-    Private Sub OpenTXTFile(path As String) 'Laddar upp i det enkla textformatet men försöker först utröna hur den är kodad.
+    Private Sub OpenTXTFile(filepath As String) 'Laddar upp i det enkla textformatet men försöker först utröna hur den är kodad.
         Dim str_custom As String
         Dim array_C As Array 'Custom.
         Dim array_P2 As Array 'Part 2 of custom.
@@ -426,27 +472,26 @@ Public Class Form1 'Ver 1.1
         Try
             If IsEncode Then
                 'Använarens kodval.
-                rtbARK.Text = My.Computer.FileSystem.ReadAllText(path, codetype)
+                rtbARK.Text = My.Computer.FileSystem.ReadAllText(filepath, codetype)
             Else
                 'Automatiskt kodval.
-                Dim detected As Encoding = DetectFileEncoding(path)
+                Dim detected As Encoding = DetectFileEncoding(filepath)
                 Select Case CODENAME
                     Case "UTF7"
-                        rtbARK.Text = My.Computer.FileSystem.ReadAllText(path, detected)
+                        rtbARK.Text = My.Computer.FileSystem.ReadAllText(filepath, detected)
                     Case "UTF8"
-                        rtbARK.Text = My.Computer.FileSystem.ReadAllText(path, detected)
+                        rtbARK.Text = My.Computer.FileSystem.ReadAllText(filepath, detected)
                     Case "UTF16 LE"
-                        rtbARK.Text = My.Computer.FileSystem.ReadAllText(path, detected)
+                        rtbARK.Text = My.Computer.FileSystem.ReadAllText(filepath, detected)
                     Case "UTF16 BE"
-                        rtbARK.Text = My.Computer.FileSystem.ReadAllText(path, detected)
+                        rtbARK.Text = My.Computer.FileSystem.ReadAllText(filepath, detected)
                     Case "UTF32 BE"
-                        rtbARK.Text = My.Computer.FileSystem.ReadAllText(path, detected)
+                        rtbARK.Text = My.Computer.FileSystem.ReadAllText(filepath, detected)
                 End Select
             End If
-
         Catch ex As Exception
             CODENAME = "UNKNOWN"
-            rtbARK.LoadFile(a4wOpenFileDialog.FileName, RichTextBoxStreamType.PlainText)
+            rtbARK.LoadFile(filepath, RichTextBoxStreamType.PlainText)
             MessageBox.Show("Could not find correct encoding" & vbCrLf & ex.Message, "Default encoding", MessageBoxButtons.OK, MessageBoxIcon.Information,
             MessageBoxDefaultButton.Button2, MessageBoxOptions.RightAlign)
         End Try
@@ -456,7 +501,7 @@ Public Class Form1 'Ver 1.1
             array_C = str_custom.Split("|@|")
             array_P2 = array_C(1).ToString().Split("|#|")
 
-            Me.Text = "EE A4W Portrait [" & CODENAME & "] - " & a4wOpenFileDialog.SafeFileName
+            Me.Text = $"EE A4W Portrait [{CODENAME}] - {Path.GetFileName(filepath)}"
             rtbARK.Font = New Font(array_P2(0).ToString(), CInt(array_P2(1)))
             tbSNITT.Font = New Font(array_P2(0).ToString(), 10)
             tbSNITT.Text = array_P2(0).ToString()
@@ -490,119 +535,60 @@ Public Class Form1 'Ver 1.1
     End Sub
 
     Private Sub BtnSAVE_Click(sender As Object, e As EventArgs) Handles btnSAVE.Click 'Sparar filer.
-        Dim filtyp, filnamn As String
-        Dim f_langd As Byte
+        Dim filepath As String
+        a4wSaveFileDialog.Title = "Save File"
 
-        If btnSAVE.Text = "Press!" Or btnSAVE.Text = "S a v e" Then
-            btnSAVE.Text = "Save"
-            btnSAVE.ForeColor = Color.Navy
-        End If
+        If Not notopen Then 'Sparar i ett svep utan att någon dialogruta öppnas först.
+            filepath = PATH_FILE
 
-        If ejsparat Then 'Gör en förladdning så att dessa parametrar kan aktiveras vid det första klicket.
-            a4wSaveFileDialog.Title = "Save File"
-            a4wSaveFileDialog.FileName = ""
-            ejsparat = False
-        End If
-
-        If Not ejoppnat Then
-            If inopendialog Then 'Sparar i ett svep utan att någon dialogruta öppnas först.
-                filtyp = a4wOpenFileDialog.FileName
-                filnamn = filtyp
-                f_langd = filnamn.Length
-
-                If filnamn = Nothing Then
-                    btnSAVE.Text = "Press!"
-                    btnSAVE.ForeColor = Color.Navy
-                    ejoppnat = True
-                    Exit Sub
-                End If
-
-                If f_langd > 3 Then filtyp = filtyp.Substring(f_langd - 4, 4) 'Hämtar fyra tecken av filtyp .rtf
-
-                If filtyp = ".rtf" Or filtyp = ".Rtf" Or filtyp = ".rTf" Or filtyp = ".rtF" Or filtyp = ".RTf" Or
-                filtyp = ".rTF" Or filtyp = ".RtF" Or filtyp = ".RTF" Then 'Kollar om filtypen är av Rich text-formatet.
-                    SaveRtfFile(filnamn, False)
-                Else
-                    SaveTXTFile(filnamn, False)
-                End If
-
-            Else
-                filtyp = a4wSaveFileDialog.FileName
-                filnamn = filtyp
-                f_langd = filnamn.Length
-
-                If filnamn = Nothing Then
-                    btnSAVE.Text = "Press!"
-                    btnSAVE.ForeColor = Color.Navy
-                    ejoppnat = True
-                    Exit Sub
-                End If
-
-                If f_langd > 3 Then filtyp = filtyp.Substring(f_langd - 4, 4) 'Hämtar fyra tecken av filtyp .rtf
-
-                If filtyp = ".rtf" Or filtyp = ".Rtf" Or filtyp = ".rTf" Or filtyp = ".rtF" Or filtyp = ".RTf" Or
-                filtyp = ".rTF" Or filtyp = ".RtF" Or filtyp = ".RTF" Then 'Kollar om filtypen är av Rich text-formatet.
-                    SaveRtfFile(filnamn, False)
-                Else
-                    SaveTXTFile(filnamn, False)
-                End If
+            If filepath = Nothing Then
+                btnSAVE.Text = "Press!"
+                btnSAVE.ForeColor = Color.Navy
+                notopen = True
+                Exit Sub
             End If
         Else
-            If a4wSaveFileDialog.ShowDialog = DialogResult.OK Then
-                a4wSaveFileDialog.Title = "Save File"
-                filtyp = a4wSaveFileDialog.FileName
-                filnamn = filtyp
-                f_langd = filnamn.Length
-
-                If f_langd > 3 Then filtyp = filtyp.Substring(f_langd - 4, 4) 'Hämtar fyra tecken av filtyp .rtf
-
-                If filtyp = ".rtf" Or filtyp = ".Rtf" Or filtyp = ".rTf" Or filtyp = ".rtF" Or filtyp = ".RTf" Or
-                filtyp = ".rTF" Or filtyp = ".RtF" Or filtyp = ".RTF" Then 'Kollar om filtypen är av Rich text-formatet.
-                    SaveRtfFile(filnamn, True)
-                Else
-                    SaveTXTFile(filnamn, True)
-                End If
-
-                Write_Jobs(a4wSaveFileDialog.FileName)
-                inopendialog = False
-                ejoppnat = False
+            If a4wSaveFileDialog.ShowDialog = DialogResult.OK Then 'Öppnar dialogruta.
+                filepath = a4wSaveFileDialog.FileName
+                a4wSaveFileDialog.FileName = Path.GetFileName(filepath)
+                PATH_FILE = filepath
+                Write_Jobs(filepath)
+                notopen = False
+            Else
+                Exit Sub
             End If
         End If
+
+        Dim ext = Path.GetExtension(filepath).ToLower()
+
+        If ext = ".rtf" Then 'Kollar om filtypen är av Rich text-formatet.
+            SaveRtfFile(filepath, True)
+        Else
+            SaveTXTFile(filepath, True)
+        End If
+        btnSAVE.Text = "Save"
+        btnSAVE.ForeColor = Color.Navy
     End Sub
 
     Private Sub BtnSAVEAS_Click(sender As Object, e As EventArgs) Handles btnSAVEAS.Click 'Sparar filer som?
-        Dim filtyp, filnamn As String
-        Dim f_langd As Byte
+        a4wSaveFileDialog.Title = "Save File As..."
 
-        If btnSAVE.Text = "Press!" Or btnSAVE.Text = "S a v e" Then
+        If a4wSaveFileDialog.ShowDialog = DialogResult.OK Then 'Öppnar dialogruta.
+            Dim filepath As String = a4wSaveFileDialog.FileName
+            a4wSaveFileDialog.FileName = Path.GetFileName(filepath)
+            PATH_FILE = filepath
+
+            Dim ext = Path.GetExtension(filepath).ToLower()
+
+            If ext = ".rtf" Then 'Kollar om filtypen är av Rich text-formatet.
+                SaveRtfFile(filepath, True)
+            Else
+                SaveTXTFile(filepath, True)
+            End If
+            Write_Jobs(filepath)
             btnSAVE.Text = "Save"
             btnSAVE.ForeColor = Color.Navy
-        End If
-
-        If ejsparat Then 'Gör en förladdning så att dessa parametrar kan aktiveras vid det första klicket.
-            a4wSaveFileDialog.Title = "Save File As..."
-            a4wSaveFileDialog.FileName = ""
-            ejsparat = False
-        End If
-
-        If a4wSaveFileDialog.ShowDialog = DialogResult.OK Then
-            a4wSaveFileDialog.Title = "Save File As..."
-            filtyp = a4wSaveFileDialog.FileName
-            filnamn = filtyp
-            f_langd = filnamn.Length
-
-            If f_langd > 3 Then filtyp = filtyp.Substring(f_langd - 4, 4) 'Hämtar fyra tecken av filtyp .rtf
-
-            If filtyp = ".rtf" Or filtyp = ".Rtf" Or filtyp = ".rTf" Or filtyp = ".rtF" Or filtyp = ".RTf" Or
-            filtyp = ".rTF" Or filtyp = ".RtF" Or filtyp = ".RTF" Then 'Kollar om filtypen är av Rich text-formatet.
-                SaveRtfFile(filnamn, True)
-            Else
-                SaveTXTFile(filnamn, True)
-            End If
-
-            Write_Jobs(a4wSaveFileDialog.FileName)
-            inopendialog = False
-            ejoppnat = False
+            notopen = False
         End If
     End Sub
 
@@ -613,7 +599,7 @@ Public Class Form1 'Ver 1.1
             MessageBox.Show(ex.Message, "Save file error", MessageBoxButtons.OK, MessageBoxIcon.Warning,
             MessageBoxDefaultButton.Button2, MessageBoxOptions.RightAlign)
         End Try
-        If headertext Then Me.Text = "EE A4W Portrait [RTF] - " & Path.GetFileName(a4wSaveFileDialog.FileName)
+        If headertext Then Me.Text = $"EE A4W Portrait [RTF] - {Path.GetFileName(filepath)}"
         SampleAndReset(False)
     End Sub
 
@@ -625,7 +611,7 @@ Public Class Form1 'Ver 1.1
                 MessageBox.Show(ex.Message, "Save file error", MessageBoxButtons.OK, MessageBoxIcon.Warning,
                 MessageBoxDefaultButton.Button2, MessageBoxOptions.RightAlign)
             End Try
-            If headertext Then Me.Text = "EE A4W Portrait [" & CODENAME & "] - " & Path.GetFileName(a4wSaveFileDialog.FileName)
+            If headertext Then Me.Text = $"EE A4W Portrait [{CODENAME}] - {Path.GetFileName(filepath)}"
         Else
             Try
                 My.Computer.FileSystem.WriteAllText(filepath, rtbARK.Text, False) 'Sparar textfilen som en UTF-8.
@@ -633,7 +619,7 @@ Public Class Form1 'Ver 1.1
                 MessageBox.Show(ex.Message, "Save file error", MessageBoxButtons.OK, MessageBoxIcon.Warning,
                 MessageBoxDefaultButton.Button2, MessageBoxOptions.RightAlign)
             End Try
-            If headertext Then Me.Text = "EE A4W Portrait [UTF8] - " & Path.GetFileName(a4wSaveFileDialog.FileName)
+            If headertext Then Me.Text = $"EE A4W Portrait [UTF8] - {Path.GetFileName(filepath)}"
         End If
         SampleAndReset(False)
     End Sub
@@ -1232,10 +1218,10 @@ Public Class Form1 'Ver 1.1
         Dim loadimg As Image
         Dim isloaded As Boolean = False
 
-        If ejbild Then 'Gör en förladdning så att dessa parametrar kan aktiveras vid det första klicket.
+        If notimage Then 'Gör en förladdning så att dessa parametrar kan aktiveras vid det första klicket.
             imgOpenFileDialog.Title = "Download Image"
             imgOpenFileDialog.FileName = ""
-            ejbild = False
+            notimage = False
         End If
 
         If imgOpenFileDialog.ShowDialog = DialogResult.OK Then
@@ -1378,7 +1364,7 @@ Public Class Form1 'Ver 1.1
         Dim lbl4 As New Label With {
             .Name = "e_lblEE4",
             .Font = sfe14,
-            .Text = "Ver 1.1",
+            .Text = "Ver 1.2 NET6",
             .ForeColor = ecolor,
             .TextAlign = 2,
             .Size = New Size(190, 28),
@@ -1575,10 +1561,10 @@ Public Class Form1 'Ver 1.1
         Me.Text = "EE A4W Portrait [RTF]"
         a4wOpenFileDialog.FileName = ""
         a4wSaveFileDialog.FileName = ""
+        PATH_FILE = ""
         btnSAVE.Text = "Save"
         btnSAVE.ForeColor = Color.Navy
-        ejoppnat = True
-        ejsparat = True
+        notopen = True
     End Sub
 
     Private Sub TsmiOpen_Click(sender As Object, e As EventArgs) Handles tsmiOpen.Click 'Öppnar filer.
@@ -1852,13 +1838,10 @@ Public Class Form1 'Ver 1.1
 
     Private Sub MenuItems_Clicked(sender As Object, e As EventArgs) 'Identifierar alla nya submenyer i jobb-menyn.
         Dim item As ToolStripMenuItem = TryCast(sender, ToolStripMenuItem)
-        Dim filtyp, path_file As String
-        Dim f_langd As Byte
+        Dim filepath As String
 
         If item IsNot Nothing Then
-            filtyp = ""
-            path_file = item.Text
-            f_langd = path_file.Length
+            filepath = item.Text
 
             If IsChanged Then 'Larmar om man försöker öppna en ny fil utan att först sparat det man håller på med.
                 Dim resultat As DialogResult = MessageBox.Show("Continue to finish work before opening file", "Open file", MessageBoxButtons.YesNo,
@@ -1866,33 +1849,29 @@ Public Class Form1 'Ver 1.1
                 If resultat = DialogResult.Yes Then Exit Sub
             End If
 
-            If f_langd > 3 Then filtyp = path_file.Substring(f_langd - 4, 4) 'Hämtar fyra tecken av filtyp .rtf
+            Dim ext = Path.GetExtension(filepath).ToLower()
 
-            If My.Computer.FileSystem.FileExists(path_file) Then 'Om filen har flyttats eller tagits bort så finns den inte.
-                ejoppnat = False
-                inopendialog = True
-                a4wOpenFileDialog.FileName = path_file
+            If My.Computer.FileSystem.FileExists(filepath) Then 'Om filen har flyttats eller tagits bort så finns den inte.
+                a4wSaveFileDialog.FileName = Path.GetFileName(filepath)
+                PATH_FILE = filepath
 
-                If filtyp = ".rtf" Or filtyp = ".Rtf" Or filtyp = ".rTf" Or filtyp = ".rtF" Or filtyp = ".RTf" Or
-                filtyp = ".rTF" Or filtyp = ".RtF" Or filtyp = ".RTF" Then 'Kollar om filtypen är av Rich text-formatet.
-                    rtbARK.LoadFile(path_file, RichTextBoxStreamType.RichText) 'Laddar upp i Rich text-formatet.
-                    Me.Text = "EE A4W Portrait [RTF] - " & a4wOpenFileDialog.SafeFileName
+                If ext = ".rtf" Then 'Kollar om filtypen är av Rich text-formatet.
+                    rtbARK.LoadFile(filepath, RichTextBoxStreamType.RichText) 'Laddar upp i Rich text-formatet.
+                    Me.Text = $"EE A4W Portrait [RTF] - {Path.GetFileName(filepath)}"
                     Rtf_ON = True
-                    btnSAVE.Text = "Save"
-                    btnSAVE.ForeColor = Color.Navy
-                    SampleAndReset(True)
                 Else
-                    OpenTXTFile(path_file) 'Laddar upp i textformatet.
+                    OpenTXTFile(filepath) 'Laddar upp i textformatet.
                     Rtf_ON = False
-                    btnSAVE.Text = "Save"
-                    btnSAVE.ForeColor = Color.Navy
-                    SampleAndReset(True)
                 End If
 
+                btnSAVE.Text = "Save"
+                btnSAVE.ForeColor = Color.Navy
+                notopen = False
+                SampleAndReset(True)
             Else
                 MessageBox.Show("Cannot find this file", "File not exist", MessageBoxButtons.OK, MessageBoxIcon.Warning,
                 MessageBoxDefaultButton.Button2, MessageBoxOptions.RightAlign)
-                Fix_Jobs(path_file)
+                Fix_Jobs(filepath)
             End If
         End If
     End Sub

@@ -1,6 +1,4 @@
-﻿Imports Microsoft.VisualBasic.ApplicationServices
-
-Namespace My
+﻿Namespace My
     ' The following events are available for MyApplication:
     ' Startup: Raised when the application starts, before the startup form is created.
     ' Shutdown: Raised after all application forms are closed.  This event is not raised if the application terminates abnormally.
@@ -25,5 +23,19 @@ Namespace My
 
     Partial Friend Class MyApplication
 
+        Private Sub rtbARK_DragEnter(sender As Object, e As DragEventArgs)
+            If e.Data.GetDataPresent(DataFormats.FileDrop) Then
+                e.Effect = DragDropEffects.Copy
+            End If
+        End Sub
+
+        Private Sub rtbARK_DragDrop(sender As Object, e As DragEventArgs)
+            Dim files() As String = CType(e.Data.GetData(DataFormats.FileDrop), String())
+            If files.Length > 0 Then
+                Form1.OpenFileFast(files(0))
+            End If
+        End Sub
+
     End Class
+
 End Namespace

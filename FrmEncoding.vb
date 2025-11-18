@@ -110,7 +110,8 @@ Public Class FrmEncoding
     End Sub
 
     Private Sub SaveInfo()
-        MessageBox.Show("Note! All text files are converted to UTF-8 if saved", "Unicode UTF-8", MessageBoxButtons.OK, MessageBoxIcon.Information,
+        MessageBox.Show("Make sure to check 'Save file as selected type'," & vbCrLf & "otherwise the files will be saved in UTF-8...",
+        "Unicode UTF-8", MessageBoxButtons.OK, MessageBoxIcon.Information,
         MessageBoxDefaultButton.Button2, MessageBoxOptions.RightAlign)
     End Sub
 
