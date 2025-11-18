@@ -1,11 +1,11 @@
 EEA4W Updates
 =============
-Ver 1.1 Date 202505:
+Ver 1.1 NET6 Date 202505:
 1. When rendering for different fonts in a selected text, such as size, styles (B, I, U, S) and when choosing uppercase/lowercase: Individual changes for each letter/character have been removed, because the text becomes fragmented. If the rendering fails, a warning message appears.
 2. Introduction of pop-up windows when clicking the right mouse button. For copy, cut, paste, delete, undo and select all.
 3. When you close without saving your changes, the no option has changed to the yes option.
 
-Ver 1.2 Date 202511:
+Ver 1.2 NET8 Date 202511:
 1. You can now choose to open a file by double-clicking on it - if you associate the app's EXE file with RTF/TXT files...
 2. It is now possible that with the mouse - drag and drop a file into the text editor.
 3. More robust file handling has been implemented.

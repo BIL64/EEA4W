@@ -1,10 +1,10 @@
-﻿Imports System.Drawing.Printing
+﻿Imports System.Text
 Imports System.Drawing.Text
+Imports System.Drawing.Printing
 Imports System.IO
 Imports System.Runtime.InteropServices
-Imports System.Text
 
-Public Class Form1 'Ver 1.2 NET6
+Public Class Form1 'Ver 1.2 NET8
 
     Private Const X_skarm As Integer = 836
     Private Y_skarm As Integer
@@ -1364,7 +1364,7 @@ Public Class Form1 'Ver 1.2 NET6
         Dim lbl4 As New Label With {
             .Name = "e_lblEE4",
             .Font = sfe14,
-            .Text = "Ver 1.2 NET6",
+            .Text = "Ver 1.2 NET8",
             .ForeColor = ecolor,
             .TextAlign = 2,
             .Size = New Size(190, 28),
